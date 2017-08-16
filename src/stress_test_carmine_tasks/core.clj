@@ -17,12 +17,19 @@
 (defmacro wcar* [& body] `(r/wcar redis-conn ~@body))
 
 (defn test-handler [{:keys [message attempt]}]
-  (doseq [i (range 10000)]
-    ;; (println "Writing key in " message)
-    (wcar* (r/set (str "key-" (rand-int 100)) "yes"))
-    (Thread/sleep 100))
-  (println "SUCCESSFULLY FINISHED HANDLER (SHOULD NOT HAPPEN)")
-  {:status :success})
+  (try
+    (/ 0 0)
+    ;; (doseq [i (range 10000)]
+    ;;     ;; (println "Writing key in " message)
+    ;;     (wcar* (r/set (str "key-" (rand-int 100)) "yes"))
+    ;;     (Thread/sleep 100))
+    (println "SUCCESSFULLY FINISHED HANDLER (SHOULD NOT HAPPEN)")
+    {:status :success}
+    (catch Exception e
+      (println "Exception catched!")
+      ;; XXX TO TEST, ADD OR REMOVE THIS LINE
+      ;; (throw e)
+      {:status :retry})))
 
 
 (defn get-tasks []
@@ -73,9 +80,9 @@
         (swap! successfully-added inc)
         (catch Exception e
           (pprint e)))))
-  (future
+  #_(future
     ;; This needs to add up to 20 secs max
-    (doseq [i (range 1 100)]
+    (doseq [i (range 1 50)]
       (Thread/sleep (+ 100 (rand-int 100)))
       (println "STOPPING REDIS...")
       (sh-with-sudo "/etc/init.d/redis stop")
@@ -83,7 +90,7 @@
       (println "STARTING REDIS...")
       (sh-with-sudo "/etc/init.d/redis start")))
   ;; Wait until tasks are created and Redis has been restarted
-  (Thread/sleep 150000)
+  (Thread/sleep 5000)
   ;; At this point all tasks should be added (or at least tried), and in `successfully-added`,
   ;; and none should be done, since we waited less than 20 seconds
   (println "Test 1:"
